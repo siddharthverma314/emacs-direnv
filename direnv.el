@@ -35,9 +35,6 @@
 (defvar direnv--output-buffer-name "*direnv*"
   "Name of the buffer filled with the last direnv output.")
 
-(defvar direnv--executable (direnv--detect)
-  "Detected path of the direnv executable.")
-
 (defvar direnv--active-directory nil
   "Name of the directory for which direnv has most recently ran.")
 
@@ -91,10 +88,6 @@ use `default-directory', since there is no file name (or directory)."
 
 (defun direnv--export (directory)
   "Call direnv for DIRECTORY and return the parsed result."
-  (unless direnv--executable
-    (setq direnv--executable (direnv--detect)))
-  (unless direnv--executable
-    (user-error "Could not find the direnv executable. Is exec-path correct?"))
   (let ((environment process-environment)
         (stderr-tempfile (make-temp-file "direnv-stderr"))) ;; call-process needs a file for stderr output
     (unwind-protect
@@ -104,10 +97,12 @@ use `default-directory', since there is no file name (or directory)."
                  (process-environment (if (file-remote-p default-directory)
 					  tramp-remote-process-environment
 					environment))
-                 (exit-code (process-file
-                             direnv--executable nil
-                             `(t ,stderr-tempfile) nil
-                             "export" "json")))
+		 (direnv--executable (direnv--detect))
+                 (exit-code (if (null direnv--executable)
+				-1
+			      (process-file direnv--executable nil
+					    `(t ,stderr-tempfile) nil
+					    "export" "json"))))
             (prog1
                 (unless (zerop (buffer-size))
                   (goto-char (point-max))
