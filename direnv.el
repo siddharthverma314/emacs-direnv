@@ -255,6 +255,8 @@ When FORCE-SUMMARY is non-nil or when called interactively, show a summary messa
 	(when (file-remote-p directory)
 	  (setq tramp-remote-process-environment process-environment))
         (when (string-equal name "PATH")
+          (when (file-remote-p directory)
+            (setq tramp-remote-path (append (parse-colon-path value) (list exec-directory))))
           (setq exec-path (append (parse-colon-path value) (list exec-directory)))
           ;; Prevent `eshell-path-env` getting out-of-sync with $PATH:
           (when (derived-mode-p 'eshell-mode)
